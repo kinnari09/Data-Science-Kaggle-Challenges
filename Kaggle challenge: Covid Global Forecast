@@ -1,0 +1,82 @@
+# This Python 3 environment comes with many helpful analytics libraries installed
+# It is defined by the kaggle/python docker image: https://github.com/kaggle/docker-python
+# For example, here's several helpful packages to load in 
+
+import numpy as np # linear algebra
+import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
+
+# Input data files are available in the "../input/" directory.
+# For example, running this (by clicking run or pressing Shift+Enter) will list all files under the input directory
+
+import os
+for dirname, _, filenames in os.walk('/kaggle/input'):
+    for filename in filenames:
+        print(os.path.join(dirname, filename))
+
+# Any results you write to the current directory are saved as output.
+
+df= pd.read_csv("/kaggle/input/covid19-global-forecasting-week-4/train.csv")
+
+#df.columns
+#df.info
+df.isnull().sum()
+
+#df['Province_State']
+df['Province_State'].value_counts()
+
+del df['Province_State']
+
+df.columns
+
+countrydf = pd.get_dummies(df['Country_Region'],prefix='Country')
+datedf = pd.get_dummies(df['Date'],prefix='Date')
+
+df= df.drop(['Country_Region'], axis=1)
+df= df.drop(['Date'], axis=1)
+
+Xtrain = pd.concat([df, countrydf], axis=1, sort= False)
+Xtrain = pd.concat([Xtrain, datedf], axis=1, sort= False)
+
+Xtrain.columns
+Ytrain= Xtrain['ConfirmedCases']
+Xtrain= Xtrain.drop(['ConfirmedCases'], axis=1)
+
+Xtest = pd.read_csv("/kaggle/input/covid19-global-forecasting-week-4/test.csv")
+
+Xtest = Xtest.drop(['Province_State'], axis=1)
+
+Xtestcountry = pd.get_dummies(Xtest['Country_Region'],prefix='Country')
+Xtestdate = pd.get_dummies(Xtest['Date'],prefix='Date')
+
+
+Xtest = pd.concat([Xtest, Xtestcountry], axis=1, sort= False)
+Xtest = pd.concat([Xtest, Xtestdate], axis=1, sort= False)
+Xtest= Xtest.drop(['Country_Region'], axis=1)
+Xtest = Xtest.drop(['Date'], axis=1)
+
+from sklearn.model_selection import train_test_split
+Xtrain, Xtest, Ytrain, Ytest = train_test_split(Xtrain,Ytrain, test_size = 0.2, random_state = 0)
+
+Ytest
+
+from sklearn import svm, datasets
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.neural_network import MLPClassifier
+
+model1 = DecisionTreeRegressor(random_state=0, max_depth=5)
+
+model1.fit(Xtrain,Ytrain)
+
+predictions = model1.predict(Xtest)
+print(predictions)
+
+#print("Decision Tree",accuracy_score(Ytest,predictions)*100,"%")
+
+sub = pd.read_csv("/kaggle/input/covid19-global-forecasting-week-4/submission.csv")
+sub.to_csv('submission.csv',index= False)
+
